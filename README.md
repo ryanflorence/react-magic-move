@@ -24,3 +24,11 @@ Usage
 </MagicMove>
 ```
 
+Running Example
+---------------
+```
+npm install -g webpack
+webpack
+cd examples
+python -m SimpleHTTPServer 8000
+```
