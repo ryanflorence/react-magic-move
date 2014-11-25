@@ -6,9 +6,6 @@ Magic Move for React.JS
 Usage
 -----
 
-Wrap a list of elments that change order and they'll animate to their
-new positions.
-
 1. Wrap some ordered elements in `<MagicMove/>`
 2. Add a key to each element
 3. Add some CSS transitions and border-box sizing (so the code can
