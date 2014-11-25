@@ -27,8 +27,6 @@ Usage
 Running Example
 ---------------
 ```
-npm install -g webpack
-webpack
-cd examples
-python -m SimpleHTTPServer 8000
+npm install
+scripts/dev-examples
 ```
