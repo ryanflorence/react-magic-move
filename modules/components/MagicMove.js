@@ -7,40 +7,68 @@ var Clones = React.createClass({
   childrenWithPositions () {
     return React.Children.map(this.props.children, (child) => {
       var style = this.props.positions[child.key];
-      style.position = 'absolute';
       return cloneWithProps(child, { style });
     });
   },
 
   render () {
-    var styles = {
-      color: 'red'
-    };
-
     return <div
       className="MagicMoveClones"
-      style={styles}
     >{this.childrenWithPositions()}</div>
   }
 });
+
+function debounce(fn) {
+  var timer;
+  return function() {
+    clearTimeout(timer);
+    timer = setTimeout(fn, 0);
+  }
+}
 
 var MagicMove = React.createClass({
 
   displayName: 'MagicMove',
 
-  componentWillReceiveProps (nextProps) {
-    this.props.animating = true;
-    this.props.positions = this.getPositions();
-    this.renderClones(this.props);
+  getInitialState () {
+    return {
+      animating: false
+    };
+  },
+
+  componentDidMount () {
+    this.addTransitionEndEvent();
+  },
+
+  componentWillReceiveProps () {
+    this.startAnimation();
   },
 
   componentDidUpdate (prevProps) {
+    if (this.state.animating)
+      this.renderClonesToNewPositions(prevProps);
+  },
+
+  addTransitionEndEvent() {
+    this.refs.clones.getDOMNode().
+      addEventListener('transitionend', debounce(this.finishAnimation));
+  },
+
+  finishAnimation () {
+    React.unmountComponentAtNode(this.refs.clones.getDOMNode());
+    this.setState({ animating: false });
+  },
+
+  startAnimation () {
+    this.props.animating = true;
+    this.props.positions = this.getPositions();
+    this.renderClones(this.props);
+    this.setState({ animating: true });
+  },
+
+  renderClonesToNewPositions (prevProps) {
     prevProps.positions = this.getPositions();
-    this.renderClones(prevProps, () => {
-      setTimeout(() => {
-        React.unmountComponentAtNode(this.refs.clones.getDOMNode());
-      }, 500);
-    });
+    this.renderClones(prevProps);
   },
 
   getPositions () {
@@ -56,7 +84,8 @@ var MagicMove = React.createClass({
         top: (rect.top - marginTop),
         left: (rect.left - marginLeft),
         width: rect.width,
-        height: rect.height
+        height: rect.height,
+        position: 'absolute'
       };
       positions[ref] = position;
     });
@@ -74,9 +103,10 @@ var MagicMove = React.createClass({
   },
 
   render () {
+    var style = { opacity: this.state.animating ? 0 : 1 };
     return (
       <div>
-        <div ref="actual">{this.childrenWithRefs()}</div>
+        <div ref="actual" style={style}>{this.childrenWithRefs()}</div>
         <div ref="clones"></div>
       </div>
     );
