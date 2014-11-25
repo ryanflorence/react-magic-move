@@ -1,0 +1,9 @@
+body {
+  font-family: "Helvetica Neue", Arial;
+  font-weight: 200;
+  background: #ccc;
+}
+
+hr, .User {
+  box-sizing: border-box;
+}

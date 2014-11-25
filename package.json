@@ -1,0 +1,49 @@
+{
+  "name": "react-magic-move",
+  "version": "0.11.2",
+  "description": "A complete routing library for React.js",
+  "main": "./modules/index",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rackt/react-magic-move.git"
+  },
+  "homepage": "https://github.com/rackt/react-magic-move/blob/latest/README.md",
+  "bugs": "https://github.com/rackt/react-magic-move/issues",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "scripts/test --browsers Firefox --single-run"
+  },
+  "authors": [
+    "Ryan Florence"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "browserify": "4.2.3",
+    "browserify-shim": "3.6.0",
+    "bundle-loader": "0.5.1",
+    "envify": "1.2.0",
+    "jsx-loader": "0.12.0",
+    "react": "0.12.x",
+    "reactify": "0.15.x",
+    "rf-release": "0.4.0",
+    "webpack": "1.4.5",
+    "webpack-dev-server": "1.6.5"
+  },
+  "peerDependencies": {
+    "react": "0.12.x"
+  },
+  "tags": [
+    "react",
+    "animation"
+  ],
+  "keywords": [
+    "react",
+    "react-component",
+    "animation"
+  ],
+  "browserify-shim": {
+    "react": "global:React"
+  }
+}
