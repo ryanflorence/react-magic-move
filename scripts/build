@@ -1,8 +1,18 @@
 #!/bin/sh
 mkdir -p dist
-NODE_ENV=production node_modules/.bin/browserify modules/index.js -t
-browserify-shim -t envify --detect-globals false -s ReactMagicMove > dist/react-magic-move.js
-node_modules/.bin/uglifyjs dist/react-magic-move --compress warnings=false > dist/react-magic-move.min.js
+
+NODE_ENV=production node_modules/.bin/browserify modules/index.js \
+  -t [reactify --es6] \
+  -t browserify-shim \
+  -t envify \
+  --detect-globals false \
+  -s ReactMagicMove \
+  > dist/react-magic-move.js
+
+node_modules/.bin/uglifyjs dist/react-magic-move.js \
+  --compress \
+  warnings=false \
+  > dist/react-magic-move.min.js
+
 echo "gzipped, the global build is:"
 echo "`gzip -c dist/react-magic-move.min.js | wc -c` bytes"
-

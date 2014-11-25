@@ -21,13 +21,15 @@
   "license": "MIT",
   "devDependencies": {
     "browserify": "4.2.3",
-    "browserify-shim": "3.6.0",
+    "browserify-shim": "^3.8.0",
     "bundle-loader": "0.5.1",
     "envify": "1.2.0",
     "jsx-loader": "0.12.0",
     "react": "0.12.x",
-    "reactify": "0.15.x",
+    "reactify": "^0.17.1",
     "rf-release": "0.4.0",
+    "uglify-js": "^2.4.15",
+    "uglifyjs": "^2.3.6",
     "webpack": "1.4.5",
     "webpack-dev-server": "1.6.5"
   },
