@@ -8,6 +8,8 @@ var App = React.createClass({
   },
 
   sort: function(order) {
+    if (order == 'alphabetical' && order == this.state.order)
+      return;
     this.setState({order: order});
   },
 

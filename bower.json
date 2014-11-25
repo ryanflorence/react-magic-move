@@ -1,16 +1,15 @@
 {
-  "name": "react-router",
-  "version": "0.11.2",
-  "homepage": "https://github.com/rackt/react-router",
+  "name": "react-magic-move",
+  "version": "0.0.0",
+  "homepage": "https://github.com/rpflorence/react-magic-move",
   "authors": [
-    "Ryan Florence",
-    "Michael Jackson"
+    "Ryan Florence"
   ],
-  "description": "A complete routing library for React.js",
-  "main": "dist/react-router.js",
+  "description": "MagicMove for React.js",
+  "main": "dist/react-magic-move.js",
   "keywords": [
     "react",
-    "router"
+    "animation"
   ],
   "license": "MIT",
   "ignore": [

@@ -1,9 +1,10 @@
 /* @jsx React.DOM */
-
 var React = require('react');
 var cloneWithProps = require('react/lib/cloneWithProps');
 
 var Clones = React.createClass({
+  displayName: 'MagicMoveClones',
+
   childrenWithPositions () {
     return React.Children.map(this.props.children, (child) => {
       var style = this.props.positions[child.key];
@@ -12,19 +13,13 @@ var Clones = React.createClass({
   },
 
   render () {
-    return <div
-      className="MagicMoveClones"
-    >{this.childrenWithPositions()}</div>
+    return (
+      <div className="MagicMoveClones">
+        {this.childrenWithPositions()}
+      </div>
+    );
   }
 });
-
-function debounce(fn) {
-  var timer;
-  return function() {
-    clearTimeout(timer);
-    timer = setTimeout(fn, 0);
-  }
-}
 
 var MagicMove = React.createClass({
 
@@ -37,7 +32,11 @@ var MagicMove = React.createClass({
   },
 
   componentDidMount () {
-    this.addTransitionEndEvent();
+    this.makePortal();
+  },
+
+  componentWillUnmount () {
+    document.body.removeChild(this.portalNode);
   },
 
   componentWillReceiveProps () {
@@ -49,17 +48,20 @@ var MagicMove = React.createClass({
       this.renderClonesToNewPositions(prevProps);
   },
 
-  addTransitionEndEvent() {
-    this.refs.clones.getDOMNode().
-      addEventListener('transitionend', debounce(this.finishAnimation));
+  makePortal () {
+    this.portalNode = document.createElement('div');
+    document.body.appendChild(this.portalNode);
+    this.addTransitionEndEvent();
   },
 
-  finishAnimation () {
-    React.unmountComponentAtNode(this.refs.clones.getDOMNode());
-    this.setState({ animating: false });
+  addTransitionEndEvent() {
+    this.portalNode.addEventListener('transitionend',
+      debounce(this.finishAnimation));
   },
 
   startAnimation () {
+    if (this.state.animating)
+      return;
     this.props.animating = true;
     this.props.positions = this.getPositions();
     this.renderClones(this.props);
@@ -69,6 +71,11 @@ var MagicMove = React.createClass({
   renderClonesToNewPositions (prevProps) {
     prevProps.positions = this.getPositions();
     this.renderClones(prevProps);
+  },
+
+  finishAnimation () {
+    React.unmountComponentAtNode(this.portalNode);
+    this.setState({ animating: false });
   },
 
   getPositions () {
@@ -93,7 +100,7 @@ var MagicMove = React.createClass({
   },
 
   renderClones (props, cb) {
-    React.render(<Clones {...props}/>, this.refs.clones.getDOMNode(), cb);
+    React.render(<Clones {...props}/>, this.portalNode, cb);
   },
 
   childrenWithRefs () {
@@ -105,13 +112,19 @@ var MagicMove = React.createClass({
   render () {
     var style = { opacity: this.state.animating ? 0 : 1 };
     return (
-      <div>
-        <div ref="actual" style={style}>{this.childrenWithRefs()}</div>
-        <div ref="clones"></div>
+      <div style={style}>
+        {this.childrenWithRefs()}
       </div>
     );
   }
-
 });
+
+function debounce(fn) {
+  var timer;
+  return function() {
+    clearTimeout(timer);
+    timer = setTimeout(fn, 0);
+  }
+}
 
 module.exports = MagicMove;

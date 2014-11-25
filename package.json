@@ -1,14 +1,14 @@
 {
   "name": "react-magic-move",
-  "version": "0.11.2",
-  "description": "A complete routing library for React.js",
+  "version": "0.0.0",
+  "description": "MagicMove for React.js",
   "main": "./modules/index",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rackt/react-magic-move.git"
+    "url": "https://github.com/rpflorence/react-magic-move.git"
   },
-  "homepage": "https://github.com/rackt/react-magic-move/blob/latest/README.md",
-  "bugs": "https://github.com/rackt/react-magic-move/issues",
+  "homepage": "https://github.com/rpflorence/react-magic-move/blob/latest/README.md",
+  "bugs": "https://github.com/rpflorence/react-magic-move/issues",
   "directories": {
     "example": "examples"
   },
