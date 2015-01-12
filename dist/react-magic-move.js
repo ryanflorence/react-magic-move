@@ -7,10 +7,15 @@ var Clones = React.createClass({
   displayName: 'MagicMoveClones',
 
   childrenWithPositions:function () {
-    return React.Children.map(this.props.children, function(child)  {
+    var children = [];
+    React.Children.forEach(this.props.children, function(child)  {
       var style = this.props.positions[child.key];
-      return cloneWithProps(child, { style:style });
+      var key = child.key;
+      children.push(cloneWithProps(child, { style:style, key:key }));
     }.bind(this));
+    return children.sort(function (a, b) {
+      return (a.key < b.key) ? -1 : (a.key > b.key) ? 1 : 0;
+    });
   },
 
   render:function () {
@@ -34,14 +39,15 @@ var MagicMove = React.createClass({
 
   componentDidMount:function () {
     this.makePortal();
+    this.renderClonesInitially();
   },
 
   componentWillUnmount:function () {
     document.body.removeChild(this.portalNode);
   },
 
-  componentWillReceiveProps:function () {
-    this.startAnimation();
+  componentWillReceiveProps:function (nextProps) {
+    this.startAnimation(nextProps);
   },
 
   componentDidUpdate:function (prevProps) {
@@ -51,22 +57,31 @@ var MagicMove = React.createClass({
 
   makePortal:function () {
     this.portalNode = document.createElement('div');
+    this.portalNode.style.left = '-9999px';
     document.body.appendChild(this.portalNode);
-    this.addTransitionEndEvent();
   },
 
-  addTransitionEndEvent:function() {
-    this.portalNode.addEventListener('transitionend',
-      debounce(this.finishAnimation));
+  addTransitionEndEvent:function () {
+    // if you click RIGHT before the transition is done, the animation jumps,
+    // its because the transitionend event fires even though its not quite
+    // done, not sure how to hack around it yet.
+    this._transitionHandler = callOnNthCall(this.props.children.length, this.finishAnimation);
+    this.portalNode.addEventListener('transitionend', this._transitionHandler);
   },
 
-  startAnimation:function () {
+  removeTransitionEndEvent:function () {
+    this.portalNode.removeEventListener('transitionend', this._transitionHandler);
+  },
+
+  startAnimation:function (nextProps) {
     if (this.state.animating)
       return;
-    this.props.animating = true;
-    this.props.positions = this.getPositions();
-    this.renderClones(this.props);
-    this.setState({ animating: true });
+    this.addTransitionEndEvent();
+    nextProps.animating = true;
+    nextProps.positions = this.getPositions();
+    this.renderClones(nextProps, function()  {
+      this.setState({ animating: true });
+    }.bind(this));
   },
 
   renderClonesToNewPositions:function (prevProps) {
@@ -75,7 +90,8 @@ var MagicMove = React.createClass({
   },
 
   finishAnimation:function () {
-    React.unmountComponentAtNode(this.portalNode);
+    this.removeTransitionEndEvent();
+    this.portalNode.style.position = 'absolute';
     this.setState({ animating: false });
   },
 
@@ -100,7 +116,13 @@ var MagicMove = React.createClass({
     return positions;
   },
 
+  renderClonesInitially:function () {
+    this.props.positions = this.getPositions();
+    React.render(React.createElement(Clones, React.__spread({},  this.props)), this.portalNode);
+  },
+
   renderClones:function (props, cb) {
+    this.portalNode.style.position = '';
     React.render(React.createElement(Clones, React.__spread({},  props)), this.portalNode, cb);
   },
 
@@ -120,12 +142,15 @@ var MagicMove = React.createClass({
   }
 });
 
-function debounce(fn) {
-  var timer;
-  return function() {
-    clearTimeout(timer);
-    timer = setTimeout(fn, 0);
-  }
+function callOnNthCall(n, fn) {
+  var calls = 0;
+  return function () {
+    calls++;
+    if (calls === n) {
+      calls = 0;
+      return fn.apply(this, arguments);
+    }
+  };
 }
 
 module.exports = MagicMove;
