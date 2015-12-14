@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-export const MagicMover = React.createClass({
+export const MagicMove = React.createClass({
   getInitialState: function(){
       return {animating: false}
   },
