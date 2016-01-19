@@ -15,6 +15,7 @@
   "scripts": {
     "build": "jsx ./modules/components/MagicMove.jsx > ./modules/components/MagicMove.js",
     "prepublish": "npm run build",
+    "build:example": "webpack",
     "test": "echo 'no tests yet' && exit 0"
   },
   "authors": [
@@ -27,7 +28,8 @@
     "bundle-loader": "0.5.1",
     "envify": "1.2.0",
     "jsx-loader": "0.12.0",
-    "react": "0.12.x",
+    "react": "^0.14.6",
+    "react-dom": "^0.14.6",
     "react-tools": "^0.13.3",
     "reactify": "^0.17.1",
     "rf-release": "0.4.0",

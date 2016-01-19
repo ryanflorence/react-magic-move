@@ -18,9 +18,9 @@ var Clones = React.createClass({
 
   render () {
     return (
-      <div className="MagicMoveClones">
-        {this.childrenWithPositions()}
-      </div>
+      React.createElement("div", {className: "MagicMoveClones"}, 
+        this.childrenWithPositions()
+      )
     );
   }
 });
@@ -122,12 +122,12 @@ var MagicMove = React.createClass({
     var updatedProps = Object.assign({}, this.props, {
         positions
     });
-    ReactDOM.render(<Clones {...updatedProps}/>, this.portalNode);
+    ReactDOM.render(React.createElement(Clones, React.__spread({},  updatedProps)), this.portalNode);
   },
 
   renderClones (props, cb) {
     this.portalNode.style.position = '';
-    ReactDOM.render(<Clones {...props}/>, this.portalNode, cb);
+    ReactDOM.render(React.createElement(Clones, React.__spread({},  props)), this.portalNode, cb);
   },
 
   childrenWithRefs () {
@@ -139,9 +139,9 @@ var MagicMove = React.createClass({
   render () {
     var style = { opacity: this.state.animating ? 0 : 1 };
     return (
-      <div style={style}>
-        {this.childrenWithRefs()}
-      </div>
+      React.createElement("div", {style: style}, 
+        this.childrenWithRefs()
+      )
     );
   }
 });
