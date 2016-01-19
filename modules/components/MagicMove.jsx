@@ -1,4 +1,3 @@
-/* @jsx React.DOM */
 var React = require('react');
 var cloneWithProps = require('react/lib/cloneWithProps');
 

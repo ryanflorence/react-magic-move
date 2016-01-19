@@ -1,6 +1,6 @@
 {
   "name": "react-magic-move",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MagicMove for React.js",
   "main": "./modules/index",
   "repository": {
@@ -13,6 +13,8 @@
     "example": "examples"
   },
   "scripts": {
+    "build": "jsx ./modules/components/MagicMove.jsx > ./modules/components/MagicMove.js",
+    "prepublish": "npm run build",
     "test": "echo 'no tests yet' && exit 0"
   },
   "authors": [
@@ -26,6 +28,7 @@
     "envify": "1.2.0",
     "jsx-loader": "0.12.0",
     "react": "0.12.x",
+    "react-tools": "^0.13.3",
     "reactify": "^0.17.1",
     "rf-release": "0.4.0",
     "uglify-js": "^2.4.15",
