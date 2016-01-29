@@ -3,6 +3,13 @@ React Magic Move
 
 Magic Move for React.JS
 
+NOT A PRODUCTION MODULE
+-----------------------
+
+This was just a fun experiment, with some love, it could definitely be a real
+thing, but I don't have time. I will merge pull requests to keep it working,
+but I don't maintain this right now.
+
 Usage
 -----
 
