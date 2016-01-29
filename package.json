@@ -2,7 +2,7 @@
   "name": "react-magic-move",
   "version": "0.1.1",
   "description": "MagicMove for React.js",
-  "main": "./modules/index",
+  "main": "./modules/lib/index",
   "repository": {
     "type": "git",
     "url": "https://github.com/rpflorence/react-magic-move.git"
@@ -13,7 +13,7 @@
     "example": "examples"
   },
   "scripts": {
-    "build": "jsx ./modules/components/MagicMove.jsx > ./modules/components/MagicMove.js",
+    "build": "babel ./modules/src --out-dir ./modules/lib",
     "prepublish": "npm run build",
     "build:example": "webpack",
     "test": "echo 'no tests yet' && exit 0"
@@ -23,6 +23,9 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "babel": "^6.3.26",
+    "babel-cli": "^6.4.5",
+    "babel-preset-react": "^6.3.13",
     "browserify": "4.2.3",
     "browserify-shim": "^3.8.0",
     "bundle-loader": "0.5.1",
@@ -39,7 +42,7 @@
     "webpack-dev-server": "1.6.5"
   },
   "peerDependencies": {
-    "react": "0.12.x"
+    "react": "0.14.x"
   },
   "tags": [
     "react",

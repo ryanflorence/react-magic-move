@@ -41,7 +41,7 @@ module.exports = {
 
   resolve: {
     alias: {
-      'react-magic-move': '../../modules/index'
+      'react-magic-move': '../../modules/lib/index'
     }
   },
 
