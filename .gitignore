@@ -1,4 +1,4 @@
-examples/**/*-bundle.js
+examples/__build__
 node_modules
 
 .DS_Store
