@@ -1,144 +1,128 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.ReactMagicMove=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /* @jsx React.DOM */
-var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null);
-var cloneWithProps = _dereq_('react/lib/cloneWithProps');
+var React = (typeof window !== "undefined" ? window['React'] : typeof global !== "undefined" ? global['React'] : null);
+var ReactDOM = _dereq_('react-dom');
 
-var Clones = React.createClass({
-  displayName: 'MagicMoveClones',
+var MagicMove = React.createClass({displayName: "MagicMove",
+  getInitialState: function(){
+      return {animating: false}
+  },
+  propTypes: {
+    component: React.PropTypes.any
+  },
+  getDefaultProps: function() {
+    return {
+      component: 'span'
+    };
+  },
+  componentDidMount: function(){
+    this.createPortal();
+  },
+  componentWillUnmount: function() {
+    document.body.removeChild(this.portalNode);
+  },
+  componentWillReceiveProps: function(nextProps){
+    if(this.state.animating){
+      return
+    }
+    this.startAnimation(nextProps);
+  },
+  startAnimation: function(nextProps){
+    this.setState({animating: true});
+    this.getChildrenPositions();
+    this.cloneChildren(nextProps);
+  },
+  componentDidUpdate: function(prevProps){
+    // console.log('DID UPDATE');
+    this.getChildrenPositions();
+    this.cloneChildren(prevProps);
+  },
+  getChildrenPositions: function(){
+    var positions = {};
+    React.Children.map(this.props.children, function(child)  {
+      var ref = child.key;
+      if(ref){
+        var node = this.refs[ref];
+        var rect = node.getBoundingClientRect();
+        var computedStyle = getComputedStyle(node);
+        var marginTop = parseInt(computedStyle.marginTop, 10);
+        var marginLeft = parseInt(computedStyle.marginLeft, 10);
+        var position = {
+          content: child.key,
+          top: (rect.top - marginTop),
+          left: (rect.left - marginLeft),
+          width: rect.width,
+          height: rect.height,
+          position: 'absolute'
+        };
+        positions[ref] = position;
+      }
+    }.bind(this));
+    return positions;
+  },
+  createPortal: function(){
+    this.portalNode = this.props.component === 'tbody' ? document.createElement('table'): document.createElement(this.props.component);
+    this.portalNode.style.position = 'absolute';
+    this.portalNode.style.left = '-9999px';
+    document.body.appendChild(this.portalNode);
+  },
+  finishAnimation: function(){
+    this.setState({animating: false});
+    this.portalNode.style.position = 'absolute';
+  },
+  addEndTransitionEvent: function(){
+    this._transitionHandler = callOnNthCall(this.props.children.length, this.finishAnimation);
+    this.portalNode.addEventListener('transitionend', this._transitionHandler);
+  },
+  cloneChildren: function(nextProps){
+    var props = nextProps || this.props;
+    this.addEndTransitionEvent();
+    this.portalNode.style.position = '';
+    React.Children.map(this.props.children, function(child) 
+      {return ReactDOM.render(React.createElement(Clones, React.__spread({},  props, {positions: this.getChildrenPositions()})), this.portalNode);}.bind(this)
+    );
+  },
+  cloneWithRefs: function(){
+    return React.Children.map(this.props.children, function(child) 
+      {return React.cloneElement(child, {ref: child.key});}
+    )
+  },
+  render: function(){
+    var style = {opacity: this.state.animating ? 0 : 1};
+    return React.createElement(this.props.component, {style: style}, this.cloneWithRefs());
+  }
+});
 
-  childrenWithPositions:function () {
+var Clones = React.createClass({displayName: "Clones",
+  componentWillReceiveProps: function(nextProps){
+
+  },
+  cloneChildrenWithPositions: function(){
+    return React.Children.map(this.props.children, function(child)  {
+      var style = {};
+      if(child.key){
+        var style = this.props.positions[child.key];
+        style.background = '#eee';
+        return React.cloneElement(child, {style: style, 'key': child.key})
+      }
+    }.bind(this));
+  },
+  childrenWithPositions: function() {
     var children = [];
     React.Children.forEach(this.props.children, function(child)  {
-      var style = this.props.positions[child.key];
-      var key = child.key;
-      children.push(cloneWithProps(child, { style:style, key:key }));
+      if(child.key){
+        var key = child.key;
+        var style = this.props.positions[key];
+        children.push(React.cloneElement(child, { style:style, key:key }));
+      }
     }.bind(this));
     return children.sort(function (a, b) {
       return (a.key < b.key) ? -1 : (a.key > b.key) ? 1 : 0;
     });
   },
-
-  render:function () {
-    return (
-      React.createElement("div", {className: "MagicMoveClones"}, 
-        this.childrenWithPositions()
-      )
-    );
-  }
-});
-
-var MagicMove = React.createClass({
-
-  displayName: 'MagicMove',
-
-  getInitialState:function () {
-    return {
-      animating: false
-    };
-  },
-
-  componentDidMount:function () {
-    this.makePortal();
-    this.renderClonesInitially();
-  },
-
-  componentWillUnmount:function () {
-    document.body.removeChild(this.portalNode);
-  },
-
-  componentWillReceiveProps:function (nextProps) {
-    this.startAnimation(nextProps);
-  },
-
-  componentDidUpdate:function (prevProps) {
-    if (this.state.animating)
-      this.renderClonesToNewPositions(prevProps);
-  },
-
-  makePortal:function () {
-    this.portalNode = document.createElement('div');
-    this.portalNode.style.left = '-9999px';
-    document.body.appendChild(this.portalNode);
-  },
-
-  addTransitionEndEvent:function () {
-    // if you click RIGHT before the transition is done, the animation jumps,
-    // its because the transitionend event fires even though its not quite
-    // done, not sure how to hack around it yet.
-    this._transitionHandler = callOnNthCall(this.props.children.length, this.finishAnimation);
-    this.portalNode.addEventListener('transitionend', this._transitionHandler);
-  },
-
-  removeTransitionEndEvent:function () {
-    this.portalNode.removeEventListener('transitionend', this._transitionHandler);
-  },
-
-  startAnimation:function (nextProps) {
-    if (this.state.animating)
-      return;
-    this.addTransitionEndEvent();
-    nextProps.animating = true;
-    nextProps.positions = this.getPositions();
-    this.renderClones(nextProps, function()  {
-      this.setState({ animating: true });
-    }.bind(this));
-  },
-
-  renderClonesToNewPositions:function (prevProps) {
-    prevProps.positions = this.getPositions();
-    this.renderClones(prevProps);
-  },
-
-  finishAnimation:function () {
-    this.removeTransitionEndEvent();
-    this.portalNode.style.position = 'absolute';
-    this.setState({ animating: false });
-  },
-
-  getPositions:function () {
-    var positions = {};
-    React.Children.forEach(this.props.children, function(child)  {
-      var ref = child.key;
-      var node = this.refs[ref].getDOMNode();
-      var rect = node.getBoundingClientRect();
-      var computedStyle = getComputedStyle(node);
-      var marginTop = parseInt(computedStyle.marginTop, 10);
-      var marginLeft = parseInt(computedStyle.marginLeft, 10);
-      var position = {
-        top: (rect.top - marginTop),
-        left: (rect.left - marginLeft),
-        width: rect.width,
-        height: rect.height,
-        position: 'absolute'
-      };
-      positions[ref] = position;
-    }.bind(this));
-    return positions;
-  },
-
-  renderClonesInitially:function () {
-    this.props.positions = this.getPositions();
-    React.render(React.createElement(Clones, React.__spread({},  this.props)), this.portalNode);
-  },
-
-  renderClones:function (props, cb) {
-    this.portalNode.style.position = '';
-    React.render(React.createElement(Clones, React.__spread({},  props)), this.portalNode, cb);
-  },
-
-  childrenWithRefs:function () {
-    return React.Children.map(this.props.children, function(child)  {
-      return cloneWithProps(child, { ref: child.key});
-    });
-  },
-
-  render:function () {
-    var style = { opacity: this.state.animating ? 0 : 1 };
-    return (
-      React.createElement("div", {style: style}, 
-        this.childrenWithRefs()
-      )
-    );
+  render: function(){
+    console.log(this.portalNode);
+    return React.createElement(this.props.component, null, this.childrenWithPositions());
   }
 });
 
@@ -153,13 +137,16 @@ function callOnNthCall(n, fn) {
   };
 }
 
-module.exports = MagicMove;
-
-},{"react/lib/cloneWithProps":8}],2:[function(_dereq_,module,exports){
+},{"react-dom":3}],2:[function(_dereq_,module,exports){
 module.exports = _dereq_('./components/MagicMove');
 
 
 },{"./components/MagicMove":1}],3:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('react/lib/ReactDOM');
+
+},{"react/lib/ReactDOM":7}],4:[function(_dereq_,module,exports){
 /**
  * Copyright 2014, Facebook, Inc.
  * All rights reserved.
@@ -206,7 +193,7 @@ function assign(target, sources) {
 
 module.exports = assign;
 
-},{}],4:[function(_dereq_,module,exports){
+},{}],5:[function(_dereq_,module,exports){
 /**
  * Copyright 2013-2014, Facebook, Inc.
  * All rights reserved.
@@ -268,7 +255,7 @@ var ReactContext = {
 
 module.exports = ReactContext;
 
-},{"./Object.assign":3}],5:[function(_dereq_,module,exports){
+},{"./Object.assign":4}],6:[function(_dereq_,module,exports){
 /**
  * Copyright 2013-2014, Facebook, Inc.
  * All rights reserved.
@@ -302,7 +289,188 @@ var ReactCurrentOwner = {
 
 module.exports = ReactCurrentOwner;
 
-},{}],6:[function(_dereq_,module,exports){
+},{}],7:[function(_dereq_,module,exports){
+/**
+ * Copyright 2013-2014, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @providesModule ReactDOM
+ * @typechecks static-only
+ */
+
+"use strict";
+
+var ReactElement = _dereq_("./ReactElement");
+var ReactElementValidator = _dereq_("./ReactElementValidator");
+var ReactLegacyElement = _dereq_("./ReactLegacyElement");
+
+var mapObject = _dereq_("./mapObject");
+
+/**
+ * Create a factory that creates HTML tag elements.
+ *
+ * @param {string} tag Tag name (e.g. `div`).
+ * @private
+ */
+function createDOMFactory(tag) {
+  if ("production" !== "production") {
+    return ReactLegacyElement.markNonLegacyFactory(
+      ReactElementValidator.createFactory(tag)
+    );
+  }
+  return ReactLegacyElement.markNonLegacyFactory(
+    ReactElement.createFactory(tag)
+  );
+}
+
+/**
+ * Creates a mapping from supported HTML tags to `ReactDOMComponent` classes.
+ * This is also accessible via `React.DOM`.
+ *
+ * @public
+ */
+var ReactDOM = mapObject({
+  a: 'a',
+  abbr: 'abbr',
+  address: 'address',
+  area: 'area',
+  article: 'article',
+  aside: 'aside',
+  audio: 'audio',
+  b: 'b',
+  base: 'base',
+  bdi: 'bdi',
+  bdo: 'bdo',
+  big: 'big',
+  blockquote: 'blockquote',
+  body: 'body',
+  br: 'br',
+  button: 'button',
+  canvas: 'canvas',
+  caption: 'caption',
+  cite: 'cite',
+  code: 'code',
+  col: 'col',
+  colgroup: 'colgroup',
+  data: 'data',
+  datalist: 'datalist',
+  dd: 'dd',
+  del: 'del',
+  details: 'details',
+  dfn: 'dfn',
+  dialog: 'dialog',
+  div: 'div',
+  dl: 'dl',
+  dt: 'dt',
+  em: 'em',
+  embed: 'embed',
+  fieldset: 'fieldset',
+  figcaption: 'figcaption',
+  figure: 'figure',
+  footer: 'footer',
+  form: 'form',
+  h1: 'h1',
+  h2: 'h2',
+  h3: 'h3',
+  h4: 'h4',
+  h5: 'h5',
+  h6: 'h6',
+  head: 'head',
+  header: 'header',
+  hr: 'hr',
+  html: 'html',
+  i: 'i',
+  iframe: 'iframe',
+  img: 'img',
+  input: 'input',
+  ins: 'ins',
+  kbd: 'kbd',
+  keygen: 'keygen',
+  label: 'label',
+  legend: 'legend',
+  li: 'li',
+  link: 'link',
+  main: 'main',
+  map: 'map',
+  mark: 'mark',
+  menu: 'menu',
+  menuitem: 'menuitem',
+  meta: 'meta',
+  meter: 'meter',
+  nav: 'nav',
+  noscript: 'noscript',
+  object: 'object',
+  ol: 'ol',
+  optgroup: 'optgroup',
+  option: 'option',
+  output: 'output',
+  p: 'p',
+  param: 'param',
+  picture: 'picture',
+  pre: 'pre',
+  progress: 'progress',
+  q: 'q',
+  rp: 'rp',
+  rt: 'rt',
+  ruby: 'ruby',
+  s: 's',
+  samp: 'samp',
+  script: 'script',
+  section: 'section',
+  select: 'select',
+  small: 'small',
+  source: 'source',
+  span: 'span',
+  strong: 'strong',
+  style: 'style',
+  sub: 'sub',
+  summary: 'summary',
+  sup: 'sup',
+  table: 'table',
+  tbody: 'tbody',
+  td: 'td',
+  textarea: 'textarea',
+  tfoot: 'tfoot',
+  th: 'th',
+  thead: 'thead',
+  time: 'time',
+  title: 'title',
+  tr: 'tr',
+  track: 'track',
+  u: 'u',
+  ul: 'ul',
+  'var': 'var',
+  video: 'video',
+  wbr: 'wbr',
+
+  // SVG
+  circle: 'circle',
+  defs: 'defs',
+  ellipse: 'ellipse',
+  g: 'g',
+  line: 'line',
+  linearGradient: 'linearGradient',
+  mask: 'mask',
+  path: 'path',
+  pattern: 'pattern',
+  polygon: 'polygon',
+  polyline: 'polyline',
+  radialGradient: 'radialGradient',
+  rect: 'rect',
+  stop: 'stop',
+  svg: 'svg',
+  text: 'text',
+  tspan: 'tspan'
+
+}, createDOMFactory);
+
+module.exports = ReactDOM;
+
+},{"./ReactElement":8,"./ReactElementValidator":9,"./ReactLegacyElement":10,"./mapObject":15}],8:[function(_dereq_,module,exports){
 /**
  * Copyright 2014, Facebook, Inc.
  * All rights reserved.
@@ -479,7 +647,7 @@ ReactElement.createElement = function(type, config, children) {
   }
 
   // Resolve default props
-  if (type.defaultProps) {
+  if (type && type.defaultProps) {
     var defaultProps = type.defaultProps;
     for (propName in defaultProps) {
       if (typeof props[propName] === 'undefined') {
@@ -546,229 +714,556 @@ ReactElement.isValidElement = function(object) {
 
 module.exports = ReactElement;
 
-},{"./ReactContext":4,"./ReactCurrentOwner":5,"./warning":13}],7:[function(_dereq_,module,exports){
+},{"./ReactContext":5,"./ReactCurrentOwner":6,"./warning":17}],9:[function(_dereq_,module,exports){
 /**
- * Copyright 2013-2014, Facebook, Inc.
+ * Copyright 2014, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule ReactPropTransferer
+ * @providesModule ReactElementValidator
  */
 
-"use strict";
-
-var assign = _dereq_("./Object.assign");
-var emptyFunction = _dereq_("./emptyFunction");
-var invariant = _dereq_("./invariant");
-var joinClasses = _dereq_("./joinClasses");
-var warning = _dereq_("./warning");
-
-var didWarn = false;
-
 /**
- * Creates a transfer strategy that will merge prop values using the supplied
- * `mergeStrategy`. If a prop was previously unset, this just sets it.
- *
- * @param {function} mergeStrategy
- * @return {function}
- */
-function createTransferStrategy(mergeStrategy) {
-  return function(props, key, value) {
-    if (!props.hasOwnProperty(key)) {
-      props[key] = value;
-    } else {
-      props[key] = mergeStrategy(props[key], value);
-    }
-  };
-}
-
-var transferStrategyMerge = createTransferStrategy(function(a, b) {
-  // `merge` overrides the first object's (`props[key]` above) keys using the
-  // second object's (`value`) keys. An object's style's existing `propA` would
-  // get overridden. Flip the order here.
-  return assign({}, b, a);
-});
-
-/**
- * Transfer strategies dictate how props are transferred by `transferPropsTo`.
- * NOTE: if you add any more exceptions to this list you should be sure to
- * update `cloneWithProps()` accordingly.
- */
-var TransferStrategies = {
-  /**
-   * Never transfer `children`.
-   */
-  children: emptyFunction,
-  /**
-   * Transfer the `className` prop by merging them.
-   */
-  className: createTransferStrategy(joinClasses),
-  /**
-   * Transfer the `style` prop (which is an object) by merging them.
-   */
-  style: transferStrategyMerge
-};
-
-/**
- * Mutates the first argument by transferring the properties from the second
- * argument.
- *
- * @param {object} props
- * @param {object} newProps
- * @return {object}
- */
-function transferInto(props, newProps) {
-  for (var thisKey in newProps) {
-    if (!newProps.hasOwnProperty(thisKey)) {
-      continue;
-    }
-
-    var transferStrategy = TransferStrategies[thisKey];
-
-    if (transferStrategy && TransferStrategies.hasOwnProperty(thisKey)) {
-      transferStrategy(props, thisKey, newProps[thisKey]);
-    } else if (!props.hasOwnProperty(thisKey)) {
-      props[thisKey] = newProps[thisKey];
-    }
-  }
-  return props;
-}
-
-/**
- * ReactPropTransferer are capable of transferring props to another component
- * using a `transferPropsTo` method.
- *
- * @class ReactPropTransferer
- */
-var ReactPropTransferer = {
-
-  TransferStrategies: TransferStrategies,
-
-  /**
-   * Merge two props objects using TransferStrategies.
-   *
-   * @param {object} oldProps original props (they take precedence)
-   * @param {object} newProps new props to merge in
-   * @return {object} a new object containing both sets of props merged.
-   */
-  mergeProps: function(oldProps, newProps) {
-    return transferInto(assign({}, oldProps), newProps);
-  },
-
-  /**
-   * @lends {ReactPropTransferer.prototype}
-   */
-  Mixin: {
-
-    /**
-     * Transfer props from this component to a target component.
-     *
-     * Props that do not have an explicit transfer strategy will be transferred
-     * only if the target component does not already have the prop set.
-     *
-     * This is usually used to pass down props to a returned root component.
-     *
-     * @param {ReactElement} element Component receiving the properties.
-     * @return {ReactElement} The supplied `component`.
-     * @final
-     * @protected
-     */
-    transferPropsTo: function(element) {
-      ("production" !== "production" ? invariant(
-        element._owner === this,
-        '%s: You can\'t call transferPropsTo() on a component that you ' +
-        'don\'t own, %s. This usually means you are calling ' +
-        'transferPropsTo() on a component passed in as props or children.',
-        this.constructor.displayName,
-        typeof element.type === 'string' ?
-        element.type :
-        element.type.displayName
-      ) : invariant(element._owner === this));
-
-      if ("production" !== "production") {
-        if (!didWarn) {
-          didWarn = true;
-          ("production" !== "production" ? warning(
-            false,
-            'transferPropsTo is deprecated. ' +
-            'See http://fb.me/react-transferpropsto for more information.'
-          ) : null);
-        }
-      }
-
-      // Because elements are immutable we have to merge into the existing
-      // props object rather than clone it.
-      transferInto(element.props, this.props);
-
-      return element;
-    }
-
-  }
-};
-
-module.exports = ReactPropTransferer;
-
-},{"./Object.assign":3,"./emptyFunction":9,"./invariant":10,"./joinClasses":11,"./warning":13}],8:[function(_dereq_,module,exports){
-/**
- * Copyright 2013-2014, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
- * @typechecks
- * @providesModule cloneWithProps
+ * ReactElementValidator provides a wrapper around a element factory
+ * which validates the props passed to the element. This is intended to be
+ * used only in DEV and could be replaced by a static type checker for languages
+ * that support it.
  */
 
 "use strict";
 
 var ReactElement = _dereq_("./ReactElement");
-var ReactPropTransferer = _dereq_("./ReactPropTransferer");
+var ReactPropTypeLocations = _dereq_("./ReactPropTypeLocations");
+var ReactCurrentOwner = _dereq_("./ReactCurrentOwner");
 
-var keyOf = _dereq_("./keyOf");
+var monitorCodeUse = _dereq_("./monitorCodeUse");
 var warning = _dereq_("./warning");
 
-var CHILDREN_PROP = keyOf({children: null});
+/**
+ * Warn if there's no key explicitly set on dynamic arrays of children or
+ * object keys are not valid. This allows us to keep track of children between
+ * updates.
+ */
+var ownerHasKeyUseWarning = {
+  'react_key_warning': {},
+  'react_numeric_key_warning': {}
+};
+var ownerHasMonitoredObjectMap = {};
+
+var loggedTypeFailures = {};
+
+var NUMERIC_PROPERTY_REGEX = /^\d+$/;
 
 /**
- * Sometimes you want to change the props of a child passed to you. Usually
- * this is to add a CSS class.
+ * Gets the current owner's displayName for use in warnings.
  *
- * @param {object} child child component you'd like to clone
- * @param {object} props props you'd like to modify. They will be merged
- * as if you used `transferPropsTo()`.
- * @return {object} a clone of child with props merged in.
+ * @internal
+ * @return {?string} Display name or undefined
  */
-function cloneWithProps(child, props) {
-  if ("production" !== "production") {
-    ("production" !== "production" ? warning(
-      !child.ref,
-      'You are calling cloneWithProps() on a child with a ref. This is ' +
-      'dangerous because you\'re creating a new child which will not be ' +
-      'added as a ref to its parent.'
-    ) : null);
-  }
-
-  var newProps = ReactPropTransferer.mergeProps(props, child.props);
-
-  // Use `child.props.children` if it is provided.
-  if (!newProps.hasOwnProperty(CHILDREN_PROP) &&
-      child.props.hasOwnProperty(CHILDREN_PROP)) {
-    newProps.children = child.props.children;
-  }
-
-  // The current API doesn't retain _owner and _context, which is why this
-  // doesn't use ReactElement.cloneAndReplaceProps.
-  return ReactElement.createElement(child.type, newProps);
+function getCurrentOwnerDisplayName() {
+  var current = ReactCurrentOwner.current;
+  return current && current.constructor.displayName || undefined;
 }
 
-module.exports = cloneWithProps;
+/**
+ * Warn if the component doesn't have an explicit key assigned to it.
+ * This component is in an array. The array could grow and shrink or be
+ * reordered. All children that haven't already been validated are required to
+ * have a "key" property assigned to it.
+ *
+ * @internal
+ * @param {ReactComponent} component Component that requires a key.
+ * @param {*} parentType component's parent's type.
+ */
+function validateExplicitKey(component, parentType) {
+  if (component._store.validated || component.key != null) {
+    return;
+  }
+  component._store.validated = true;
 
-},{"./ReactElement":6,"./ReactPropTransferer":7,"./keyOf":12,"./warning":13}],9:[function(_dereq_,module,exports){
+  warnAndMonitorForKeyUse(
+    'react_key_warning',
+    'Each child in an array should have a unique "key" prop.',
+    component,
+    parentType
+  );
+}
+
+/**
+ * Warn if the key is being defined as an object property but has an incorrect
+ * value.
+ *
+ * @internal
+ * @param {string} name Property name of the key.
+ * @param {ReactComponent} component Component that requires a key.
+ * @param {*} parentType component's parent's type.
+ */
+function validatePropertyKey(name, component, parentType) {
+  if (!NUMERIC_PROPERTY_REGEX.test(name)) {
+    return;
+  }
+  warnAndMonitorForKeyUse(
+    'react_numeric_key_warning',
+    'Child objects should have non-numeric keys so ordering is preserved.',
+    component,
+    parentType
+  );
+}
+
+/**
+ * Shared warning and monitoring code for the key warnings.
+ *
+ * @internal
+ * @param {string} warningID The id used when logging.
+ * @param {string} message The base warning that gets output.
+ * @param {ReactComponent} component Component that requires a key.
+ * @param {*} parentType component's parent's type.
+ */
+function warnAndMonitorForKeyUse(warningID, message, component, parentType) {
+  var ownerName = getCurrentOwnerDisplayName();
+  var parentName = parentType.displayName;
+
+  var useName = ownerName || parentName;
+  var memoizer = ownerHasKeyUseWarning[warningID];
+  if (memoizer.hasOwnProperty(useName)) {
+    return;
+  }
+  memoizer[useName] = true;
+
+  message += ownerName ?
+    (" Check the render method of " + ownerName + ".") :
+    (" Check the renderComponent call using <" + parentName + ">.");
+
+  // Usually the current owner is the offender, but if it accepts children as a
+  // property, it may be the creator of the child that's responsible for
+  // assigning it a key.
+  var childOwnerName = null;
+  if (component._owner && component._owner !== ReactCurrentOwner.current) {
+    // Name of the component that originally created this child.
+    childOwnerName = component._owner.constructor.displayName;
+
+    message += (" It was passed a child from " + childOwnerName + ".");
+  }
+
+  message += ' See http://fb.me/react-warning-keys for more information.';
+  monitorCodeUse(warningID, {
+    component: useName,
+    componentOwner: childOwnerName
+  });
+  console.warn(message);
+}
+
+/**
+ * Log that we're using an object map. We're considering deprecating this
+ * feature and replace it with proper Map and ImmutableMap data structures.
+ *
+ * @internal
+ */
+function monitorUseOfObjectMap() {
+  var currentName = getCurrentOwnerDisplayName() || '';
+  if (ownerHasMonitoredObjectMap.hasOwnProperty(currentName)) {
+    return;
+  }
+  ownerHasMonitoredObjectMap[currentName] = true;
+  monitorCodeUse('react_object_map_children');
+}
+
+/**
+ * Ensure that every component either is passed in a static location, in an
+ * array with an explicit keys property defined, or in an object literal
+ * with valid key property.
+ *
+ * @internal
+ * @param {*} component Statically passed child of any type.
+ * @param {*} parentType component's parent's type.
+ * @return {boolean}
+ */
+function validateChildKeys(component, parentType) {
+  if (Array.isArray(component)) {
+    for (var i = 0; i < component.length; i++) {
+      var child = component[i];
+      if (ReactElement.isValidElement(child)) {
+        validateExplicitKey(child, parentType);
+      }
+    }
+  } else if (ReactElement.isValidElement(component)) {
+    // This component was passed in a valid location.
+    component._store.validated = true;
+  } else if (component && typeof component === 'object') {
+    monitorUseOfObjectMap();
+    for (var name in component) {
+      validatePropertyKey(name, component[name], parentType);
+    }
+  }
+}
+
+/**
+ * Assert that the props are valid
+ *
+ * @param {string} componentName Name of the component for error messages.
+ * @param {object} propTypes Map of prop name to a ReactPropType
+ * @param {object} props
+ * @param {string} location e.g. "prop", "context", "child context"
+ * @private
+ */
+function checkPropTypes(componentName, propTypes, props, location) {
+  for (var propName in propTypes) {
+    if (propTypes.hasOwnProperty(propName)) {
+      var error;
+      // Prop type validation may throw. In case they do, we don't want to
+      // fail the render phase where it didn't fail before. So we log it.
+      // After these have been cleaned up, we'll let them throw.
+      try {
+        error = propTypes[propName](props, propName, componentName, location);
+      } catch (ex) {
+        error = ex;
+      }
+      if (error instanceof Error && !(error.message in loggedTypeFailures)) {
+        // Only monitor this failure once because there tends to be a lot of the
+        // same error.
+        loggedTypeFailures[error.message] = true;
+        // This will soon use the warning module
+        monitorCodeUse(
+          'react_failed_descriptor_type_check',
+          { message: error.message }
+        );
+      }
+    }
+  }
+}
+
+var ReactElementValidator = {
+
+  createElement: function(type, props, children) {
+    // We warn in this case but don't throw. We expect the element creation to
+    // succeed and there will likely be errors in render.
+    ("production" !== "production" ? warning(
+      type != null,
+      'React.createElement: type should not be null or undefined. It should ' +
+        'be a string (for DOM elements) or a ReactClass (for composite ' +
+        'components).'
+    ) : null);
+
+    var element = ReactElement.createElement.apply(this, arguments);
+
+    // The result can be nullish if a mock or a custom function is used.
+    // TODO: Drop this when these are no longer allowed as the type argument.
+    if (element == null) {
+      return element;
+    }
+
+    for (var i = 2; i < arguments.length; i++) {
+      validateChildKeys(arguments[i], type);
+    }
+
+    if (type) {
+      var name = type.displayName;
+      if (type.propTypes) {
+        checkPropTypes(
+          name,
+          type.propTypes,
+          element.props,
+          ReactPropTypeLocations.prop
+        );
+      }
+      if (type.contextTypes) {
+        checkPropTypes(
+          name,
+          type.contextTypes,
+          element._context,
+          ReactPropTypeLocations.context
+        );
+      }
+    }
+    return element;
+  },
+
+  createFactory: function(type) {
+    var validatedFactory = ReactElementValidator.createElement.bind(
+      null,
+      type
+    );
+    validatedFactory.type = type;
+    return validatedFactory;
+  }
+
+};
+
+module.exports = ReactElementValidator;
+
+},{"./ReactCurrentOwner":6,"./ReactElement":8,"./ReactPropTypeLocations":11,"./monitorCodeUse":16,"./warning":17}],10:[function(_dereq_,module,exports){
+/**
+ * Copyright 2014, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @providesModule ReactLegacyElement
+ */
+
+"use strict";
+
+var ReactCurrentOwner = _dereq_("./ReactCurrentOwner");
+
+var invariant = _dereq_("./invariant");
+var monitorCodeUse = _dereq_("./monitorCodeUse");
+var warning = _dereq_("./warning");
+
+var legacyFactoryLogs = {};
+function warnForLegacyFactoryCall() {
+  if (!ReactLegacyElementFactory._isLegacyCallWarningEnabled) {
+    return;
+  }
+  var owner = ReactCurrentOwner.current;
+  var name = owner && owner.constructor ? owner.constructor.displayName : '';
+  if (!name) {
+    name = 'Something';
+  }
+  if (legacyFactoryLogs.hasOwnProperty(name)) {
+    return;
+  }
+  legacyFactoryLogs[name] = true;
+  ("production" !== "production" ? warning(
+    false,
+    name + ' is calling a React component directly. ' +
+    'Use a factory or JSX instead. See: http://fb.me/react-legacyfactory'
+  ) : null);
+  monitorCodeUse('react_legacy_factory_call', { version: 3, name: name });
+}
+
+function warnForPlainFunctionType(type) {
+  var isReactClass =
+    type.prototype &&
+    typeof type.prototype.mountComponent === 'function' &&
+    typeof type.prototype.receiveComponent === 'function';
+  if (isReactClass) {
+    ("production" !== "production" ? warning(
+      false,
+      'Did not expect to get a React class here. Use `Component` instead ' +
+      'of `Component.type` or `this.constructor`.'
+    ) : null);
+  } else {
+    if (!type._reactWarnedForThisType) {
+      try {
+        type._reactWarnedForThisType = true;
+      } catch (x) {
+        // just incase this is a frozen object or some special object
+      }
+      monitorCodeUse(
+        'react_non_component_in_jsx',
+        { version: 3, name: type.name }
+      );
+    }
+    ("production" !== "production" ? warning(
+      false,
+      'This JSX uses a plain function. Only React components are ' +
+      'valid in React\'s JSX transform.'
+    ) : null);
+  }
+}
+
+function warnForNonLegacyFactory(type) {
+  ("production" !== "production" ? warning(
+    false,
+    'Do not pass React.DOM.' + type.type + ' to JSX or createFactory. ' +
+    'Use the string "' + type.type + '" instead.'
+  ) : null);
+}
+
+/**
+ * Transfer static properties from the source to the target. Functions are
+ * rebound to have this reflect the original source.
+ */
+function proxyStaticMethods(target, source) {
+  if (typeof source !== 'function') {
+    return;
+  }
+  for (var key in source) {
+    if (source.hasOwnProperty(key)) {
+      var value = source[key];
+      if (typeof value === 'function') {
+        var bound = value.bind(source);
+        // Copy any properties defined on the function, such as `isRequired` on
+        // a PropTypes validator.
+        for (var k in value) {
+          if (value.hasOwnProperty(k)) {
+            bound[k] = value[k];
+          }
+        }
+        target[key] = bound;
+      } else {
+        target[key] = value;
+      }
+    }
+  }
+}
+
+// We use an object instead of a boolean because booleans are ignored by our
+// mocking libraries when these factories gets mocked.
+var LEGACY_MARKER = {};
+var NON_LEGACY_MARKER = {};
+
+var ReactLegacyElementFactory = {};
+
+ReactLegacyElementFactory.wrapCreateFactory = function(createFactory) {
+  var legacyCreateFactory = function(type) {
+    if (typeof type !== 'function') {
+      // Non-function types cannot be legacy factories
+      return createFactory(type);
+    }
+
+    if (type.isReactNonLegacyFactory) {
+      // This is probably a factory created by ReactDOM we unwrap it to get to
+      // the underlying string type. It shouldn't have been passed here so we
+      // warn.
+      if ("production" !== "production") {
+        warnForNonLegacyFactory(type);
+      }
+      return createFactory(type.type);
+    }
+
+    if (type.isReactLegacyFactory) {
+      // This is probably a legacy factory created by ReactCompositeComponent.
+      // We unwrap it to get to the underlying class.
+      return createFactory(type.type);
+    }
+
+    if ("production" !== "production") {
+      warnForPlainFunctionType(type);
+    }
+
+    // Unless it's a legacy factory, then this is probably a plain function,
+    // that is expecting to be invoked by JSX. We can just return it as is.
+    return type;
+  };
+  return legacyCreateFactory;
+};
+
+ReactLegacyElementFactory.wrapCreateElement = function(createElement) {
+  var legacyCreateElement = function(type, props, children) {
+    if (typeof type !== 'function') {
+      // Non-function types cannot be legacy factories
+      return createElement.apply(this, arguments);
+    }
+
+    var args;
+
+    if (type.isReactNonLegacyFactory) {
+      // This is probably a factory created by ReactDOM we unwrap it to get to
+      // the underlying string type. It shouldn't have been passed here so we
+      // warn.
+      if ("production" !== "production") {
+        warnForNonLegacyFactory(type);
+      }
+      args = Array.prototype.slice.call(arguments, 0);
+      args[0] = type.type;
+      return createElement.apply(this, args);
+    }
+
+    if (type.isReactLegacyFactory) {
+      // This is probably a legacy factory created by ReactCompositeComponent.
+      // We unwrap it to get to the underlying class.
+      if (type._isMockFunction) {
+        // If this is a mock function, people will expect it to be called. We
+        // will actually call the original mock factory function instead. This
+        // future proofs unit testing that assume that these are classes.
+        type.type._mockedReactClassConstructor = type;
+      }
+      args = Array.prototype.slice.call(arguments, 0);
+      args[0] = type.type;
+      return createElement.apply(this, args);
+    }
+
+    if ("production" !== "production") {
+      warnForPlainFunctionType(type);
+    }
+
+    // This is being called with a plain function we should invoke it
+    // immediately as if this was used with legacy JSX.
+    return type.apply(null, Array.prototype.slice.call(arguments, 1));
+  };
+  return legacyCreateElement;
+};
+
+ReactLegacyElementFactory.wrapFactory = function(factory) {
+  ("production" !== "production" ? invariant(
+    typeof factory === 'function',
+    'This is suppose to accept a element factory'
+  ) : invariant(typeof factory === 'function'));
+  var legacyElementFactory = function(config, children) {
+    // This factory should not be called when JSX is used. Use JSX instead.
+    if ("production" !== "production") {
+      warnForLegacyFactoryCall();
+    }
+    return factory.apply(this, arguments);
+  };
+  proxyStaticMethods(legacyElementFactory, factory.type);
+  legacyElementFactory.isReactLegacyFactory = LEGACY_MARKER;
+  legacyElementFactory.type = factory.type;
+  return legacyElementFactory;
+};
+
+// This is used to mark a factory that will remain. E.g. we're allowed to call
+// it as a function. However, you're not suppose to pass it to createElement
+// or createFactory, so it will warn you if you do.
+ReactLegacyElementFactory.markNonLegacyFactory = function(factory) {
+  factory.isReactNonLegacyFactory = NON_LEGACY_MARKER;
+  return factory;
+};
+
+// Checks if a factory function is actually a legacy factory pretending to
+// be a class.
+ReactLegacyElementFactory.isValidFactory = function(factory) {
+  // TODO: This will be removed and moved into a class validator or something.
+  return typeof factory === 'function' &&
+    factory.isReactLegacyFactory === LEGACY_MARKER;
+};
+
+ReactLegacyElementFactory.isValidClass = function(factory) {
+  if ("production" !== "production") {
+    ("production" !== "production" ? warning(
+      false,
+      'isValidClass is deprecated and will be removed in a future release. ' +
+      'Use a more specific validator instead.'
+    ) : null);
+  }
+  return ReactLegacyElementFactory.isValidFactory(factory);
+};
+
+ReactLegacyElementFactory._isLegacyCallWarningEnabled = true;
+
+module.exports = ReactLegacyElementFactory;
+
+},{"./ReactCurrentOwner":6,"./invariant":13,"./monitorCodeUse":16,"./warning":17}],11:[function(_dereq_,module,exports){
+/**
+ * Copyright 2013-2014, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @providesModule ReactPropTypeLocations
+ */
+
+"use strict";
+
+var keyMirror = _dereq_("./keyMirror");
+
+var ReactPropTypeLocations = keyMirror({
+  prop: null,
+  context: null,
+  childContext: null
+});
+
+module.exports = ReactPropTypeLocations;
+
+},{"./keyMirror":14}],12:[function(_dereq_,module,exports){
 /**
  * Copyright 2013-2014, Facebook, Inc.
  * All rights reserved.
@@ -802,7 +1297,7 @@ emptyFunction.thatReturnsArgument = function(arg) { return arg; };
 
 module.exports = emptyFunction;
 
-},{}],10:[function(_dereq_,module,exports){
+},{}],13:[function(_dereq_,module,exports){
 /**
  * Copyright 2013-2014, Facebook, Inc.
  * All rights reserved.
@@ -857,7 +1352,7 @@ var invariant = function(condition, format, a, b, c, d, e, f) {
 
 module.exports = invariant;
 
-},{}],11:[function(_dereq_,module,exports){
+},{}],14:[function(_dereq_,module,exports){
 /**
  * Copyright 2013-2014, Facebook, Inc.
  * All rights reserved.
@@ -866,39 +1361,51 @@ module.exports = invariant;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule joinClasses
+ * @providesModule keyMirror
  * @typechecks static-only
  */
 
 "use strict";
 
+var invariant = _dereq_("./invariant");
+
 /**
- * Combines multiple className strings into one.
- * http://jsperf.com/joinclasses-args-vs-array
+ * Constructs an enumeration with keys equal to their value.
  *
- * @param {...?string} classes
- * @return {string}
+ * For example:
+ *
+ *   var COLORS = keyMirror({blue: null, red: null});
+ *   var myColor = COLORS.blue;
+ *   var isColorValid = !!COLORS[myColor];
+ *
+ * The last line could not be performed if the values of the generated enum were
+ * not equal to their keys.
+ *
+ *   Input:  {key1: val1, key2: val2}
+ *   Output: {key1: key1, key2: key2}
+ *
+ * @param {object} obj
+ * @return {object}
  */
-function joinClasses(className/*, ... */) {
-  if (!className) {
-    className = '';
-  }
-  var nextClass;
-  var argLength = arguments.length;
-  if (argLength > 1) {
-    for (var ii = 1; ii < argLength; ii++) {
-      nextClass = arguments[ii];
-      if (nextClass) {
-        className = (className ? className + ' ' : '') + nextClass;
-      }
+var keyMirror = function(obj) {
+  var ret = {};
+  var key;
+  ("production" !== "production" ? invariant(
+    obj instanceof Object && !Array.isArray(obj),
+    'keyMirror(...): Argument must be an object.'
+  ) : invariant(obj instanceof Object && !Array.isArray(obj)));
+  for (key in obj) {
+    if (!obj.hasOwnProperty(key)) {
+      continue;
     }
+    ret[key] = key;
   }
-  return className;
-}
+  return ret;
+};
 
-module.exports = joinClasses;
+module.exports = keyMirror;
 
-},{}],12:[function(_dereq_,module,exports){
+},{"./invariant":13}],15:[function(_dereq_,module,exports){
 /**
  * Copyright 2013-2014, Facebook, Inc.
  * All rights reserved.
@@ -907,34 +1414,83 @@ module.exports = joinClasses;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule keyOf
+ * @providesModule mapObject
  */
+
+'use strict';
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
- * Allows extraction of a minified key. Let's the build system minify keys
- * without loosing the ability to dynamically use key strings as values
- * themselves. Pass in an object with a single key/val pair and it will return
- * you the string key of that single record. Suppose you want to grab the
- * value for a key 'className' inside of an object. Key/val minification may
- * have aliased that key to be 'xa12'. keyOf({className: null}) will return
- * 'xa12' in that case. Resolve keys you want to use once at startup time, then
- * reuse those resolutions.
+ * Executes the provided `callback` once for each enumerable own property in the
+ * object and constructs a new object from the results. The `callback` is
+ * invoked with three arguments:
+ *
+ *  - the property value
+ *  - the property name
+ *  - the object being traversed
+ *
+ * Properties that are added after the call to `mapObject` will not be visited
+ * by `callback`. If the values of existing properties are changed, the value
+ * passed to `callback` will be the value at the time `mapObject` visits them.
+ * Properties that are deleted before being visited are not visited.
+ *
+ * @grep function objectMap()
+ * @grep function objMap()
+ *
+ * @param {?object} object
+ * @param {function} callback
+ * @param {*} context
+ * @return {?object}
  */
-var keyOf = function(oneKeyObj) {
-  var key;
-  for (key in oneKeyObj) {
-    if (!oneKeyObj.hasOwnProperty(key)) {
-      continue;
-    }
-    return key;
+function mapObject(object, callback, context) {
+  if (!object) {
+    return null;
   }
-  return null;
-};
+  var result = {};
+  for (var name in object) {
+    if (hasOwnProperty.call(object, name)) {
+      result[name] = callback.call(context, object[name], name, object);
+    }
+  }
+  return result;
+}
 
+module.exports = mapObject;
 
-module.exports = keyOf;
+},{}],16:[function(_dereq_,module,exports){
+/**
+ * Copyright 2014, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @providesModule monitorCodeUse
+ */
 
-},{}],13:[function(_dereq_,module,exports){
+"use strict";
+
+var invariant = _dereq_("./invariant");
+
+/**
+ * Provides open-source compatible instrumentation for monitoring certain API
+ * uses before we're ready to issue a warning or refactor. It accepts an event
+ * name which may only contain the characters [a-z0-9_] and an optional data
+ * object with further information.
+ */
+
+function monitorCodeUse(eventName, data) {
+  ("production" !== "production" ? invariant(
+    eventName && !/[^a-z0-9_]/.test(eventName),
+    'You must provide an eventName using only the characters [a-z0-9_]'
+  ) : invariant(eventName && !/[^a-z0-9_]/.test(eventName)));
+}
+
+module.exports = monitorCodeUse;
+
+},{"./invariant":13}],17:[function(_dereq_,module,exports){
 /**
  * Copyright 2014, Facebook, Inc.
  * All rights reserved.
@@ -977,6 +1533,6 @@ if ("production" !== "production") {
 
 module.exports = warning;
 
-},{"./emptyFunction":9}]},{},[2])
+},{"./emptyFunction":12}]},{},[2])
 (2)
 });
