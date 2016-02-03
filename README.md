@@ -31,3 +31,9 @@ Usage
 </MagicMove>
 ```
 
+Running Example
+---------------
+```
+npm install
+scripts/dev-examples
+```
