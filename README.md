@@ -31,3 +31,7 @@ Usage
 </MagicMove>
 ```
 
+Demo
+-----
+
+[React.js Conf Demo of Magic Move](https://www.youtube.com/watch?v=z5e7kWSHWTg#t=424)
