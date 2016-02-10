@@ -104,8 +104,8 @@ var MagicMove = React.createClass({
       var marginTop = parseInt(computedStyle.marginTop, 10);
       var marginLeft = parseInt(computedStyle.marginLeft, 10);
       var position = {
-        top: (rect.top - marginTop),
-        left: (rect.left - marginLeft),
+        top: (rect.top - marginTop + window.scrollY),
+        left: (rect.left - marginLeft + window.scrollX),
         width: rect.width,
         height: rect.height,
         position: 'absolute'
