@@ -25,7 +25,7 @@
     "bundle-loader": "0.5.1",
     "envify": "1.2.0",
     "jsx-loader": "0.12.0",
-    "react": "0.12.x",
+    "react": "0.13.x",
     "reactify": "^0.17.1",
     "rf-release": "0.4.0",
     "uglify-js": "^2.4.15",
@@ -34,7 +34,7 @@
     "webpack-dev-server": "1.6.5"
   },
   "peerDependencies": {
-    "react": "0.12.x"
+    "react": "0.12.x || 0.13.x"
   },
   "tags": [
     "react",
