@@ -24,7 +24,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "babel": "^6.3.26",
     "babel-cli": "^6.4.5",
     "babel-preset-react": "^6.3.13",
     "bundle-loader": "0.5.1",
