@@ -15,6 +15,7 @@
   "scripts": {
     "build": "babel ./modules/src --out-dir ./modules/lib",
     "prepublish": "npm run build",
+    "postinstall": "node -e \"require('fs').stat('lib', function (e, s) { process.exit(e || !s.isDirectory() ? 1 : 0) })\" || npm run build",
     "build:example": "webpack",
     "test": "echo 'no tests yet' && exit 0"
   },
