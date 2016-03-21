@@ -35,13 +35,13 @@ module.exports = {
 
   module: {
     loaders: [
-      { test: /\.js$/, loader: 'jsx-loader?harmony' }
+      { test: /\.js$/, loader: 'babel' }
     ]
   },
 
   resolve: {
     alias: {
-      'react-magic-move': '../../modules/index'
+      'react-magic-move': '../../modules/lib/index'
     }
   },
 

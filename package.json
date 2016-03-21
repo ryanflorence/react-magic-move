@@ -1,8 +1,8 @@
 {
   "name": "react-magic-move",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MagicMove for React.js",
-  "main": "./modules/index",
+  "main": "./modules/lib/index",
   "repository": {
     "type": "git",
     "url": "https://github.com/rpflorence/react-magic-move.git"
@@ -13,28 +13,30 @@
     "example": "examples"
   },
   "scripts": {
+    "build": "babel ./modules/src --out-dir ./modules/lib",
+    "prepublish": "npm run build",
+    "postinstall": "node -e \"require('fs').stat('modules/lib', function (e, s) { process.exit(e || !s.isDirectory() ? 1 : 0) })\" || npm run build",
+    "build:example": "webpack",
     "test": "echo 'no tests yet' && exit 0"
   },
   "authors": [
     "Ryan Florence"
   ],
   "license": "MIT",
+  "dependencies": {
+    "babel-cli": "6.4.5",
+    "babel-preset-react": "6.3.13",
+    "rf-release": "0.4.0"
+  },
   "devDependencies": {
-    "browserify": "4.2.3",
-    "browserify-shim": "^3.8.0",
-    "bundle-loader": "0.5.1",
-    "envify": "1.2.0",
-    "jsx-loader": "0.12.0",
-    "react": "0.12.x",
-    "reactify": "^0.17.1",
-    "rf-release": "0.4.0",
-    "uglify-js": "^2.4.15",
-    "uglifyjs": "^2.3.6",
+    "babel-core": "^6.7.2",
+    "react": "0.14.6",
+    "react-dom": "0.14.6",
     "webpack": "1.4.5",
     "webpack-dev-server": "1.6.5"
   },
   "peerDependencies": {
-    "react": "0.12.x"
+    "react": "0.14.x"
   },
   "tags": [
     "react",
@@ -44,8 +46,5 @@
     "react",
     "react-component",
     "animation"
-  ],
-  "browserify-shim": {
-    "react": "global:React"
-  }
+  ]
 }

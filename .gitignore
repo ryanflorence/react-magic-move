@@ -1,1 +1,6 @@
-examples/**/*-bundle.js
+examples/__build__
+modules/lib
+node_modules
+
+.DS_Store
+.DS_Store?

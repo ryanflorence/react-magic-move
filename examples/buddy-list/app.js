@@ -1,5 +1,5 @@
-/** @jsx React.DOM */
 var React = require('react');
+var ReactDOM = require('react-dom');
 var MagicMove = require('react-magic-move');
 
 var buddies = [
@@ -83,6 +83,4 @@ function sortBy(key, arr) {
   });
 }
 
-React.render(<App/>, document.getElementById('example'));
-
-
+ReactDOM.render(<App/>, document.getElementById('example'));

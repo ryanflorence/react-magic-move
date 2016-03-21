@@ -1,6 +1,5 @@
-/* @jsx React.DOM */
 var React = require('react');
-var cloneWithProps = require('react/lib/cloneWithProps');
+var ReactDOM = require('react-dom');
 
 var Clones = React.createClass({
   displayName: 'MagicMoveClones',
@@ -10,7 +9,7 @@ var Clones = React.createClass({
     React.Children.forEach(this.props.children, (child) => {
       var style = this.props.positions[child.key];
       var key = child.key;
-      children.push(cloneWithProps(child, { style, key }));
+      children.push(React.cloneElement(child, { style, key }));
     });
     return children.sort(function (a, b) {
       return (a.key < b.key) ? -1 : (a.key > b.key) ? 1 : 0;
@@ -76,16 +75,19 @@ var MagicMove = React.createClass({
     if (this.state.animating)
       return;
     this.addTransitionEndEvent();
-    nextProps.animating = true;
-    nextProps.positions = this.getPositions();
-    this.renderClones(nextProps, () => {
+    var updatedProps = Object.assign({}, nextProps, {
+        animating: true,
+        positions: this.getPositions()
+    });
+    this.renderClones(updatedProps, () => {
       this.setState({ animating: true });
     });
   },
 
   renderClonesToNewPositions (prevProps) {
-    prevProps.positions = this.getPositions();
-    this.renderClones(prevProps);
+    var positions = this.getPositions();
+    var updatedProps = Object.assign({}, prevProps, { positions });
+    this.renderClones(updatedProps);
   },
 
   finishAnimation () {
@@ -98,7 +100,7 @@ var MagicMove = React.createClass({
     var positions = {};
     React.Children.forEach(this.props.children, (child) => {
       var ref = child.key;
-      var node = this.refs[ref].getDOMNode();
+      var node = this.refs[ref];
       var rect = node.getBoundingClientRect();
       var computedStyle = getComputedStyle(node);
       var marginTop = parseInt(computedStyle.marginTop, 10);
@@ -116,18 +118,21 @@ var MagicMove = React.createClass({
   },
 
   renderClonesInitially () {
-    this.props.positions = this.getPositions();
-    React.render(<Clones {...this.props}/>, this.portalNode);
+    var positions = this.getPositions();
+    var updatedProps = Object.assign({}, this.props, {
+        positions
+    });
+    ReactDOM.render(<Clones {...updatedProps}/>, this.portalNode);
   },
 
   renderClones (props, cb) {
     this.portalNode.style.position = '';
-    React.render(<Clones {...props}/>, this.portalNode, cb);
+    ReactDOM.render(<Clones {...props}/>, this.portalNode, cb);
   },
 
   childrenWithRefs () {
     return React.Children.map(this.props.children, (child) => {
-      return cloneWithProps(child, { ref: child.key});
+      return React.cloneElement(child, { ref: child.key });
     });
   },
 
