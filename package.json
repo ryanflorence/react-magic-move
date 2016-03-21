@@ -26,13 +26,13 @@
   "dependencies": {
     "babel-cli": "6.4.5",
     "babel-preset-react": "6.3.13",
-    "react": "0.14.6",
-    "react-dom": "0.14.6",
-    "rf-release": "0.4.0",
-    "webpack": "1.4.5"
+    "rf-release": "0.4.0"
   },
   "devDependencies": {
     "babel-core": "^6.7.2",
+    "react": "0.14.6",
+    "react-dom": "0.14.6",
+    "webpack": "1.4.5",
     "webpack-dev-server": "1.6.5"
   },
   "peerDependencies": {
