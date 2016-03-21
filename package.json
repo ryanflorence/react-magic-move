@@ -32,11 +32,11 @@
     "react": "^0.14.6",
     "react-dom": "^0.14.6",
     "rf-release": "0.4.0",
-    "webpack": "1.4.5",
+    "webpack": "1.4.5"
   },
   "devDependencies": {
     "webpack-dev-server": "1.6.5"
-  }
+  },
   "peerDependencies": {
     "react": "0.14.x"
   },
@@ -48,8 +48,5 @@
     "react",
     "react-component",
     "animation"
-  ],
-  "browserify-shim": {
-    "react": "global:React"
-  }
+  ]
 }
